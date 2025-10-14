@@ -1,7 +1,12 @@
 librosa 
 matplotlib 
-soundfile 
+soundfile
+ipykernel
 numpy
 fastdtw
 transformers
-torchaudio
+
+--index-url https://download.pytorch.org/whl/cu128
+torch==2.8.0
+torchvision==0.23.0
+torchaudio==2.8.0
