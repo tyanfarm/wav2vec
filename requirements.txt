@@ -3,8 +3,13 @@ matplotlib
 soundfile
 ipykernel
 numpy
-fastdtw
 transformers
+
+fastdtw
+
+fastapi
+uvicorn
+python-multipart
 
 --index-url https://download.pytorch.org/whl/cu128
 torch==2.8.0
