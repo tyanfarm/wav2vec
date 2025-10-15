@@ -1,12 +1,13 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File
 import torch
 from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC
+from scipy.io.wavfile import write as write_wav
+import numpy as np
 import librosa
 import tempfile
 import os
 import uvicorn
-
-app = FastAPI()
 
 class PhonemeExtractor:
     def __init__(self):
@@ -38,6 +39,35 @@ class PhonemeExtractor:
 print("Loading model...")
 extractor = PhonemeExtractor()
 print("Model loaded!")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("🚀 Server starting up, beginning GPU warm-up...")
+    
+    # 1. Tạo một file audio im lặng tạm thời (ví dụ: 1 giây, 16kHz)
+    samplerate = 16000
+    duration = 1.0
+    silence = np.zeros(int(samplerate * duration), dtype=np.int16)
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+        write_wav(tmp.name, samplerate, silence)
+        warmup_file_path = tmp.name
+
+    # 2. Chạy xử lý trên file audio tạm để kích hoạt kernel GPU
+    try:
+        print(f"Running warm-up with dummy audio: {warmup_file_path}")
+        _ = extractor.process_audio(warmup_file_path)
+        print("✅ GPU is warm and ready to go!")
+    finally:
+        # 3. Dọn dẹp file tạm sau khi khởi động xong
+        os.unlink(warmup_file_path)
+        print(f"Cleaned up temporary file: {warmup_file_path}")
+        
+    yield
+    
+    print("🔌 Server shutting down.")
+    
+app = FastAPI(lifespan=lifespan)
 
 @app.post("/extract-phonemes")
 async def extract_phonemes(file: UploadFile = File(...)):   # ... means required
