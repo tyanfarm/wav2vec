@@ -2,3 +2,4 @@ myenv
 build/*
 dist/*
 *.spec
+*.ps1
