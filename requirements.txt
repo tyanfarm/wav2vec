@@ -1,11 +1,16 @@
 librosa 
 matplotlib 
 soundfile
-ipykernel
 numpy
 transformers
 
+ipykernel
+
+python-Levenshtein
+
 fastdtw
+
+regex
 
 fastapi
 uvicorn

@@ -1,0 +1,17 @@
+You are an expert linguist tasked with creating a precise grapheme-to-phoneme alignment for English words. I will provide you with a word and its IPA transcription. You must return a list of pairs, mapping the letter(s) to the sound(s).
+
+The mapping is not always one-to-one.
+
+**Example:**
+Word: "apple"
+IPA Transcription: "æpəl"
+Expected Output:
+[("a", "æ"), ("pp", "p"), ("le", "əl")]
+
+**Your Task:**
+Now, perform the same alignment for the following input:
+
+Word: "January"
+IPA Transcription: "d͡ʒænjuɛɹi"
+
+Provide only the final list as the output.
