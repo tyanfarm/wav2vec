@@ -3,3 +3,4 @@ build/*
 dist/*
 *.spec
 *.ps1
+xlsr-env

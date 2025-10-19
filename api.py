@@ -9,11 +9,13 @@ import tempfile
 import os
 import uvicorn
 
+MODEL_NAME = "KoelLabs/xlsr-english-01"
+
 class PhonemeExtractor:
     def __init__(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.processor = Wav2Vec2Processor.from_pretrained("bookbot/wav2vec2-ljspeech-gruut")
-        self.model = Wav2Vec2ForCTC.from_pretrained("bookbot/wav2vec2-ljspeech-gruut")
+        self.processor = Wav2Vec2Processor.from_pretrained(MODEL_NAME)
+        self.model = Wav2Vec2ForCTC.from_pretrained(MODEL_NAME)
         self.model.to(self.device)
         self.model.eval()
         
