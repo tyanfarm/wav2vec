@@ -13,7 +13,11 @@ MODEL_NAME = "KoelLabs/xlsr-english-01"
 
 class PhonemeExtractor:
     def __init__(self):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device(
+            'cuda' if torch.cuda.is_available() 
+            else 'mps' if torch.backends.mps.is_available() 
+            else 'cpu'
+        )
         self.processor = Wav2Vec2Processor.from_pretrained(MODEL_NAME)
         self.model = Wav2Vec2ForCTC.from_pretrained(MODEL_NAME)
         self.model.to(self.device)
@@ -44,7 +48,7 @@ print("Model loaded!")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("🚀 Server starting up, beginning GPU warm-up...")
+    print("🚀 Server starting up, beginning warm-up...")
     
     # 1. Tạo một file audio im lặng tạm thời (ví dụ: 1 giây, 16kHz)
     samplerate = 16000
@@ -59,7 +63,7 @@ async def lifespan(app: FastAPI):
     try:
         print(f"Running warm-up with dummy audio: {warmup_file_path}")
         _ = extractor.process_audio(warmup_file_path)
-        print("✅ GPU is warm and ready to go!")
+        print("✅ Device is warm and ready to go!")
     finally:
         # 3. Dọn dẹp file tạm sau khi khởi động xong
         os.unlink(warmup_file_path)
