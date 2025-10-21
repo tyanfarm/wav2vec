@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, ApiRouter, UploadFile, File
 import torch
 from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC
 from scipy.io.wavfile import write as write_wav
@@ -39,7 +39,8 @@ class PhonemeExtractor:
         # Clear tensor cache to free up memory
         torch.cuda.empty_cache()
         
-        return phonemes
+        # Replace specific phoneme characters
+        return phonemes.replace("ʉ", "u")       
 
 # Load model once at startup
 print("Loading model...")
@@ -72,15 +73,16 @@ async def lifespan(app: FastAPI):
     yield
     
     print("🔌 Server shutting down.")
-    
-app = FastAPI(lifespan=lifespan)
 
-@app.post("/extract-phonemes")
+app = FastAPI(lifespan=lifespan)
+v1 = ApiRouter(prefix="/v1")
+
+@v1.post("/phonemes")
 async def extract_phonemes(file: UploadFile = File(...)):   # ... means required
     # Save uploaded file
     with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
         tmp.write(await file.read())
-        tmp_path = tmp.name 
+        tmp_path = tmp.name
         print(f"Saved uploaded file to {tmp_path}")
     
     try:
@@ -88,7 +90,7 @@ async def extract_phonemes(file: UploadFile = File(...)):   # ... means required
         return {"phonemes": phonemes}
     finally:
         os.unlink(tmp_path)
-        
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
