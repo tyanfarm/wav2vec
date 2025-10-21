@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 import os
 import tempfile
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, APIRouter, UploadFile, File
 from scipy.io.wavfile import write as write_wav
 from app.services.phoneme_extractor import PhonemeExtractor
 from app.services.utils import save_upload_to_temp
@@ -17,6 +17,8 @@ async def lifespan(app: FastAPI):
     global extractor 
     extractor = PhonemeExtractor()
     print("Model loaded!")
+
+    print("🚀 Server starting up, beginning warm-up...")
 
     # silent wav 1s
     silence = np.zeros(int(SAMPLE_RATE * 1.0), dtype=np.int16)
@@ -38,8 +40,9 @@ async def lifespan(app: FastAPI):
     print("🔌 Server shutting down.")
 
 app = FastAPI(lifespan=lifespan)
+v1 = APIRouter(prefix="/v1")
 
-@app.post("/phonemes")
+@v1.post("/phonemes")
 async def extract_phonemes(file: UploadFile = File(...)):   # ... means required
     tmp_path = await save_upload_to_temp(file)
 
@@ -50,6 +53,8 @@ async def extract_phonemes(file: UploadFile = File(...)):   # ... means required
     finally:
         os.unlink(tmp_path)
 
-@app.get("/health")
+@v1.get("/health")
 def health():
     return {"status": "ok"}
+
+app.include_router(v1)

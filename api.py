@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, ApiRouter, UploadFile, File
+from fastapi import FastAPI, UploadFile, File
 import torch
 from transformers import Wav2Vec2Processor, Wav2Vec2ForCTC
 from scipy.io.wavfile import write as write_wav
@@ -75,9 +75,8 @@ async def lifespan(app: FastAPI):
     print("🔌 Server shutting down.")
 
 app = FastAPI(lifespan=lifespan)
-v1 = ApiRouter(prefix="/v1")
 
-@v1.post("/phonemes")
+@app.post("/phonemes")
 async def extract_phonemes(file: UploadFile = File(...)):   # ... means required
     # Save uploaded file
     with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
