@@ -3,6 +3,7 @@ matplotlib
 soundfile
 numpy
 transformers
+python-dotenv
 
 ipykernel
 
