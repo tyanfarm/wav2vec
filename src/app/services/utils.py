@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import UploadFile
 
 async def save_upload_to_temp(file: UploadFile, suffix: Optional[str] = None) -> str:
-    """Lưu UploadFile xuống file tạm bằng streaming (tránh .read() nuốt hết RAM)."""
+    """Save temporary uploaded file and return its path."""
     if suffix is None:
         _, ext = os.path.splitext(file.filename or "")
         suffix = ext or ".bin"
