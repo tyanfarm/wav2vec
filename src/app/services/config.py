@@ -43,5 +43,8 @@ SIMILAR_PHONEME = [
 
     # === DIPHTHONGS ===
     ["oʊ", "oʊ̃", "əʊ", "aʊ"],
+    
+    # === RHOTIC / R-COLORED VOWELS ===
+    ["ɝ", "ɚ", "əɹ", "ɜɹ", "ɔɹ"],
 ]
 

@@ -41,7 +41,7 @@ class PhonemeExtractor:
             torch.cuda.empty_cache()
 
         # Normalize specific phoneme characters
-        return phonemes.replace("ʉ", "u")
+        return phonemes.replace("ʉ", "u").replace("ʔ", "").strip()
     
     """
     -- Problem: opcodes from difflib.SequenceMatcher will have case: ['dʒ', 'æ'] -> ['tʃ', 'ɛ']
@@ -66,6 +66,13 @@ class PhonemeExtractor:
         opcodes = refined_opcodes
         result = []
         
+        GREEN = '\033[92m'   # đúng
+        YELLOW = '\033[93m'  # lỗi nhẹ
+        RED = '\033[91m'     # lỗi nặng
+        RESET = '\033[0m'
+        colored_output = ""
+        
+        
         for tag, i1, i2, j1, j2 in opcodes:
             if tag == 'equal':
                 current_segment = "".join(correct_tokens[i1:i2])
@@ -73,6 +80,7 @@ class PhonemeExtractor:
                     "phonemes": current_segment,
                     "status": PronounciationStatus.MATCH.value
                 })
+                colored_output += GREEN + current_segment + RESET
                 print(f"- Giống nhau: {correct_tokens[i1:i2]}")
             elif tag == 'replace':
                 current_segment = "".join(correct_tokens[i1:i2])
@@ -83,13 +91,14 @@ class PhonemeExtractor:
                         "phonemes": current_segment,
                         "status": PronounciationStatus.SIMILAR.value
                     })
-                    
+                    colored_output += YELLOW + current_segment + RESET
                     print(f"- TƯƠNG TỰ (YELLOW): '{correct_tokens[i1]}' -> '{test_tokens[j1]}' (cùng nhóm)")
                 else:
                     result.append({
                         "phonemes": current_segment,
                         "status": PronounciationStatus.MISMATCH.value
                     })
+                    colored_output += RED + current_segment + RESET
                     print(f"- THAY THẾ (RED): {correct_tokens[i1:i2]} -> {test_tokens[j1:j2]}")
             elif tag == 'delete':
                 # Tokens missing from correct_tokens & only in test_tokens
@@ -100,12 +109,14 @@ class PhonemeExtractor:
                             "phonemes": current_segment,
                             "status": PronounciationStatus.SIMILAR.value
                         })
+                        colored_output += YELLOW + current_segment + RESET
                         print(f"- THIẾU SEMIVOWEL (YELLOW): '{current_segment}' tại vị trí token {idx}")
                     else:
                         result.append({
                             "phonemes": current_segment,
                             "status": PronounciationStatus.MISMATCH.value
                         })
+                        colored_output += RED + current_segment + RESET
                         print(f"- XÓA (RED): '{current_segment}' tại vị trí token {idx}")
             elif tag == 'insert':
                 # inserted token in test_tokens
@@ -116,14 +127,17 @@ class PhonemeExtractor:
                         "phonemes": current_segment,
                         "status": PronounciationStatus.SIMILAR.value
                     })
+                    colored_output += YELLOW + current_segment + RESET
                     print(f"- THÊM SEMIVOWEL (YELLOW): '{current_segment}' tại vị trí (theo correct) {i1}")
                 else:
                     result.append({
                         "phonemes": current_segment,
                         "status": PronounciationStatus.MISMATCH.value
                     })
+                    colored_output += RED + current_segment + RESET
                     print(f"- CHÈN (RED): {test_tokens[j1:j2]} tại vị trí (theo correct) {i1}")
                         
+        print(colored_output)
         return result
     
     def _tokenize_ipa(self, s: str) -> list[str]:
