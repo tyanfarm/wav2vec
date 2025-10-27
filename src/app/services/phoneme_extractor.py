@@ -21,7 +21,8 @@ class PhonemeExtractor:
                 self.phoneme_groups[phoneme] = group
                 
         default_tokens = set([s for group in SIMILAR_PHONEME for s in group])
-        print(default_tokens)
+        print(f"Default tokens: {default_tokens}")
+        print(f"Lenghth of default tokens: {len(default_tokens)}")
 
         print(f"[PhonemeExtractor] Using device: {self.device}")
 

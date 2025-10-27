@@ -46,5 +46,12 @@ SIMILAR_PHONEME = [
     
     # === RHOTIC / R-COLORED VOWELS ===
     ["ɝ", "ɚ", "əɹ", "ɜɹ", "ɔɹ"],
+
+    # === ADDITIONAL DIPHTHONGS ===
+    ["aɪ", "aɪ̃"],       # my, eyes
+    
+    ["eɪ"],             # say, name
+    
+    ["ɔɪ"],             # choice, voice
 ]
 
