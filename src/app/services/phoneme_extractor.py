@@ -48,7 +48,7 @@ class PhonemeExtractor:
     -- Problem: opcodes from difflib.SequenceMatcher will have case: ['dʒ', 'æ'] -> ['tʃ', 'ɛ']
     -> Solution: need to further split to 1-1 if possible: ['dʒ'->'tʃ'], ['æ'->'ɛ']
     """
-    def compare_phonemes(self, correct_phonemes: str, test_phonemes: str) -> list[dict]:
+    def compare_phonemes(self, correct_phonemes: str, test_phonemes: str, letter_phoneme_map: list[dict] = None) -> list[dict]:
         """
         Compare two phoneme strings and return a list of differences.
         """
@@ -66,6 +66,7 @@ class PhonemeExtractor:
 
         opcodes = refined_opcodes
         result = []
+        phoneme_statuses = []
         
         GREEN = '\033[92m'   # đúng
         YELLOW = '\033[93m'  # lỗi nhẹ
@@ -73,73 +74,143 @@ class PhonemeExtractor:
         RESET = '\033[0m'
         colored_output = ""
         
-        
         for tag, i1, i2, j1, j2 in opcodes:
             if tag == 'equal':
                 current_segment = "".join(correct_tokens[i1:i2])
-                result.append({
-                    "phonemes": current_segment,
-                    "status": PronounciationStatus.MATCH.value
-                })
+                current_status = PronounciationStatus.MATCH.value
+
+                for idx in range(i1, i2):
+                    phoneme_statuses.append((correct_tokens[idx], current_status))
+
                 colored_output += GREEN + current_segment + RESET
                 print(f"- Giống nhau: {correct_tokens[i1:i2]}")
+
             elif tag == 'replace':
                 current_segment = "".join(correct_tokens[i1:i2])
 
                 # Case: ['æ'] -> ['ɛ']
                 if (i2 - i1 == 1) and (j2 - j1 == 1) and self._are_phonemes_similar(correct_tokens[i1], test_tokens[j1]):
-                    result.append({
-                        "phonemes": current_segment,
-                        "status": PronounciationStatus.SIMILAR.value
-                    })
+                    current_status = PronounciationStatus.SIMILAR.value
+
                     colored_output += YELLOW + current_segment + RESET
                     print(f"- TƯƠNG TỰ (YELLOW): '{correct_tokens[i1]}' -> '{test_tokens[j1]}' (cùng nhóm)")
                 else:
-                    result.append({
-                        "phonemes": current_segment,
-                        "status": PronounciationStatus.MISMATCH.value
-                    })
+                    current_status = PronounciationStatus.MISMATCH.value
+
                     colored_output += RED + current_segment + RESET
                     print(f"- THAY THẾ (RED): {correct_tokens[i1:i2]} -> {test_tokens[j1:j2]}")
+
+                for idx in range(i1, i2):
+                    phoneme_statuses.append((correct_tokens[idx], current_status))
+
             elif tag == 'delete':
                 # Tokens missing from correct_tokens & only in test_tokens
                 for idx in range(i1, i2):
                     current_segment = correct_tokens[idx]
                     if self._is_semivowel(current_segment, idx):
-                        result.append({
-                            "phonemes": current_segment,
-                            "status": PronounciationStatus.SIMILAR.value
-                        })
+                        current_status = PronounciationStatus.SIMILAR.value
+
                         colored_output += YELLOW + current_segment + RESET
                         print(f"- THIẾU SEMIVOWEL (YELLOW): '{current_segment}' tại vị trí token {idx}")
                     else:
-                        result.append({
-                            "phonemes": current_segment,
-                            "status": PronounciationStatus.MISMATCH.value
-                        })
+                        current_status = PronounciationStatus.MISMATCH.value
+
                         colored_output += RED + current_segment + RESET
                         print(f"- XÓA (RED): '{current_segment}' tại vị trí token {idx}")
+
+                    phoneme_statuses.append((current_segment, current_status))
+
             elif tag == 'insert':
                 # inserted token in test_tokens
                 current_segment = "".join(test_tokens[j1:j2])
                 # Check is_semivowel insertion
                 if (j2 - j1 == 1) and self._is_semivowel(test_tokens[j1], i1):
-                    result.append({
-                        "phonemes": current_segment,
-                        "status": PronounciationStatus.SIMILAR.value
-                    })
+                    current_status = PronounciationStatus.SIMILAR.value
+
                     colored_output += YELLOW + current_segment + RESET
                     print(f"- THÊM SEMIVOWEL (YELLOW): '{current_segment}' tại vị trí (theo correct) {i1}")
                 else:
-                    result.append({
-                        "phonemes": current_segment,
-                        "status": PronounciationStatus.MISMATCH.value
-                    })
+                    current_status = PronounciationStatus.MISMATCH.value
+
                     colored_output += RED + current_segment + RESET
                     print(f"- CHÈN (RED): {test_tokens[j1:j2]} tại vị trí (theo correct) {i1}")
-                        
+                # For insert: we don't have corresponding phoneme in correct_tokens
+                # Skip adding to phoneme_statuses
+
+            result.append({
+                "phonemes": current_segment,
+                "status": current_status
+            })
+
         print(colored_output)
+
+        # Print colored word if letter_phoneme_map is provided
+        if letter_phoneme_map:
+            self._print_colored_word(letter_phoneme_map, phoneme_statuses)
+
         return result
+    
+    def _print_colored_word(self, letter_phoneme_map: list[dict], phoneme_statuses: list[tuple]):
+        """
+        Print the word with letters colored based on their corresponding phoneme status.
+        
+        Args:
+            letter_phoneme_map: List of dicts with 'phoneme' and 'letter' keys
+            phoneme_statuses: List of (phoneme, status) tuples from comparison
+        """
+        GREEN = '\033[92m'
+        YELLOW = '\033[93m'
+        RED = '\033[91m'
+        RESET = '\033[0m'
+        
+        # Build a mapping from phoneme index to status
+        phoneme_status_map = {}
+        phoneme_idx = 0
+        for phoneme, status in phoneme_statuses:
+            phoneme_status_map[phoneme_idx] = status
+            phoneme_idx += 1
+        
+        colored_word = ""
+        word = ""
+        
+        # Track current position in phoneme_statuses (skip spaces)
+        current_phoneme_idx = 0
+        
+        # Iterate through letter_phoneme_map
+        for mapping in letter_phoneme_map:
+            letter = mapping.get('letter', '')
+            phoneme = mapping.get('phoneme', '')
+            
+            # Handle space between words (both phoneme and letter are empty)
+            if not letter and not phoneme:
+                colored_word += " "
+                word += " "
+                continue
+            
+            # Skip other empty entries
+            if not letter:
+                current_phoneme_idx += 1
+                continue
+            
+            word += letter
+            
+            # Get status for this phoneme position
+            status = phoneme_status_map.get(current_phoneme_idx, PronounciationStatus.MATCH.value)
+            
+            # Color the letter based on status
+            if status == PronounciationStatus.MATCH.value:
+                colored_word += GREEN + letter + RESET
+            elif status == PronounciationStatus.SIMILAR.value:
+                colored_word += YELLOW + letter + RESET
+            elif status == PronounciationStatus.MISMATCH.value:
+                colored_word += RED + letter + RESET
+            else:
+                colored_word += letter
+            
+            current_phoneme_idx += 1
+        
+        print(f"\n📝 Word với letter highlight: {colored_word}")
+        print(f"   Original word: {word}")
     
     def _tokenize_ipa(self, s: str) -> list[str]:
         """Tokenize IPA string into list of phoneme tokens."""

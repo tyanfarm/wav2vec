@@ -62,7 +62,26 @@ async def test_extract_phonemes(payload: ComparePhonemes = Body(...)):
     test_phoneme = payload.test
 
     try:
-        result = extractor.compare_phonemes(correct_phoneme, test_phoneme)
+        letter_phoneme_map = [
+            {"phoneme":"dʒ","letter":"J"},
+            {"phoneme":"æ","letter":"a"},
+            {"phoneme":"n","letter":"n"},
+            {"phoneme":"j","letter":"u"},
+            {"phoneme":"u","letter":"u"},
+            {"phoneme":"w","letter":"a"},
+            {"phoneme":"ɛ","letter":"a"},
+            {"phoneme":"ɹ","letter":"r"},
+            {"phoneme":"i","letter":"y"},
+            {"phoneme":"","letter":""},
+            {"phoneme":"ɪ","letter":"e"},
+            {"phoneme":"v","letter":"v"},
+            {"phoneme":"ɛ","letter":"e"},
+            {"phoneme":"n","letter":"n"},
+            {"phoneme":"t","letter":"t"}
+        ]
+        
+        result = extractor.compare_phonemes(correct_phoneme, test_phoneme, letter_phoneme_map)
+
         return {"result": result}
     
     except Exception as e:
