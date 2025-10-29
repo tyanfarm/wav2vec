@@ -153,6 +153,7 @@ class PhonemeExtractor:
     def _print_colored_word(self, letter_phoneme_map: list[dict], phoneme_statuses: list[tuple]):
         """
         Print the word with letters colored based on their corresponding phoneme status.
+        Handles cases where one letter maps to multiple phonemes.
         
         Args:
             letter_phoneme_map: List of dicts with 'phoneme' and 'letter' keys
@@ -175,42 +176,73 @@ class PhonemeExtractor:
         
         # Track current position in phoneme_statuses (skip spaces)
         current_phoneme_idx = 0
+        prev_letter = None
+        letter_statuses = []  # Collect statuses for current letter group
         
         # Iterate through letter_phoneme_map
-        for mapping in letter_phoneme_map:
+        for i, mapping in enumerate(letter_phoneme_map):
             letter = mapping.get('letter', '')
             phoneme = mapping.get('phoneme', '')
             
             # Handle space between words (both phoneme and letter are empty)
             if not letter and not phoneme:
+                # Flush any pending letter
+                if prev_letter and letter_statuses:
+                    word += prev_letter
+                    colored_word += self._get_colored_letter(prev_letter, letter_statuses, GREEN, YELLOW, RED, RESET)
+                    letter_statuses = []
+                
                 colored_word += " "
                 word += " "
+                prev_letter = None
                 continue
             
-            # Skip other empty entries
+            # Skip entries with no letter but has phoneme
             if not letter:
                 current_phoneme_idx += 1
                 continue
             
-            word += letter
-            
             # Get status for this phoneme position
             status = phoneme_status_map.get(current_phoneme_idx, PronounciationStatus.MATCH.value)
             
-            # Color the letter based on status
-            if status == PronounciationStatus.MATCH.value:
-                colored_word += GREEN + letter + RESET
-            elif status == PronounciationStatus.SIMILAR.value:
-                colored_word += YELLOW + letter + RESET
-            elif status == PronounciationStatus.MISMATCH.value:
-                colored_word += RED + letter + RESET
+            # Check if this is a new letter or continuation of previous letter
+            if letter != prev_letter:
+                # Flush previous letter if exists
+                if prev_letter and letter_statuses:
+                    word += prev_letter
+                    colored_word += self._get_colored_letter(prev_letter, letter_statuses, GREEN, YELLOW, RED, RESET)
+                
+                # Start new letter group
+                prev_letter = letter
+                letter_statuses = [status]
             else:
-                colored_word += letter
+                # Same letter, accumulate status
+                letter_statuses.append(status)
             
             current_phoneme_idx += 1
         
+        # Flush last letter
+        if prev_letter and letter_statuses:
+            word += prev_letter
+            colored_word += self._get_colored_letter(prev_letter, letter_statuses, GREEN, YELLOW, RED, RESET)
+        
         print(f"\n📝 Word với letter highlight: {colored_word}")
         print(f"   Original word: {word}")
+
+    def _get_colored_letter(self, letter: str, statuses: list, GREEN: str, YELLOW: str, RED: str, RESET: str) -> str:
+        """
+        Determine the color for a letter based on all phoneme statuses associated with it.
+        Priority: MISMATCH > SIMILAR > MATCH
+        """
+        # If any phoneme is MISMATCH, color the whole letter RED
+        if PronounciationStatus.MISMATCH.value in statuses:
+            return RED + letter + RESET
+        # If any phoneme is SIMILAR, color the letter YELLOW
+        elif PronounciationStatus.SIMILAR.value in statuses:
+            return YELLOW + letter + RESET
+        # All phonemes are MATCH
+        else:
+            return GREEN + letter + RESET
     
     def _tokenize_ipa(self, s: str) -> list[str]:
         """Tokenize IPA string into list of phoneme tokens."""

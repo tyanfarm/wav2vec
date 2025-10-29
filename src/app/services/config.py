@@ -33,7 +33,7 @@ SIMILAR_PHONEME = [
     ["æ", "æ̃", "a"],
 
     # === CENTRAL VOWELS ===
-    ["ə", "ə̃", "ə̥", "ɜ", "ʌ", "ɨ"],
+    ["ə", "ə̃", "ə̥", "ɜ", "ʌ", "ɨ", "ɪ"],
     ["ɚ", "ɝ"],
 
     # === BACK VOWELS ===
@@ -45,7 +45,7 @@ SIMILAR_PHONEME = [
     ["oʊ", "oʊ̃", "əʊ", "aʊ"],
     
     # === RHOTIC / R-COLORED VOWELS ===
-    ["ɝ", "ɚ", "əɹ", "ɜɹ", "ɔɹ"],
+    ["ɝ", "ɚ", "əɹ", "ɜɹ", "ɔɹ", "ɛɹ"],
 
     # === ADDITIONAL DIPHTHONGS ===
     ["aɪ", "aɪ̃"],       # my, eyes
@@ -54,4 +54,10 @@ SIMILAR_PHONEME = [
     
     ["ɔɪ"],             # choice, voice
 ]
+
+# REPLACE_MAP = {
+#     "ʉ": "u:",
+#     "ʔ": "",
+
+# }
 

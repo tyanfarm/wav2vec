@@ -6,6 +6,7 @@ transformers
 python-dotenv
 
 ipykernel
+pymongo
 
 python-Levenshtein
 

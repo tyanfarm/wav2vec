@@ -9,3 +9,4 @@ class PronounciationStatus(Enum):
 class ComparePhonemes(BaseModel):
     correct: str
     test: str
+    letter_phoneme_map: list[dict[str, str]] | None = None
